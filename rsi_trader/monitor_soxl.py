@@ -19,6 +19,7 @@ from rsi_trader.config import load_config
 from rsi_trader.strategy import prepare, MarketArrays, RsiStrategy
 from rsi_trader.notifier.kakao import KakaoNotifier
 from rsi_trader.notifier.telegram import TelegramNotifier
+from rsi_trader.broker.toss_client import TossApiClient
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("soxl_monitor")
@@ -70,6 +71,12 @@ class SoxlStrategyBMonitor:
         self.strategy = RsiStrategy(self.config.strategy)
         self.kakao_notifier = KakaoNotifier()
         self.telegram_notifier = TelegramNotifier()
+        
+        # 토스증권 API 클라이언트 (설정되어 있을 때만 활성화)
+        toss_id = os.getenv("TOSS_CLIENT_ID", "").strip()
+        toss_secret = os.getenv("TOSS_CLIENT_SECRET", "").strip()
+        self.toss_client = TossApiClient(toss_id, toss_secret) if toss_id and toss_secret else None
+        
         self.last_candle_time: datetime | None = None
         self.last_alert_key: str | None = None
 
@@ -93,6 +100,17 @@ class SoxlStrategyBMonitor:
             candle_time = df["timestamp"].iloc[t]
             cur_close = arrays.close[t]
             cur_rsi = arrays.rsi[t]
+
+            # 토스증권 실시간 현재가(데이마켓 포함) 연동 시도
+            if self.toss_client:
+                try:
+                    price_info = self.toss_client.get_current_price("SOXL")
+                    if price_info and "price" in price_info:
+                        toss_price = float(price_info["price"])
+                        logger.info(f"[토스증권 실시간 시세] ${toss_price:.2f} (야후: ${cur_close:.2f})")
+                        cur_close = toss_price
+                except Exception as te:
+                    logger.warning(f"토스 시세 조회 실패(야후 시세로 폴백): {te}")
 
             logger.info(
                 f"[SOXL 모니터링] 캔들시각: {candle_time.strftime('%m-%d %H:%M')} (KST) | "

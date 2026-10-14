@@ -30,5 +30,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TOSS_CLIENT_ID: ${{ secrets.TOSS_CLIENT_ID }}
+          TOSS_CLIENT_SECRET: ${{ secrets.TOSS_CLIENT_SECRET }}
         run: |
           PYTHONPATH=. python -c "from rsi_trader.monitor_soxl import SoxlStrategyBMonitor; m = SoxlStrategyBMonitor(); m.check_once()"
