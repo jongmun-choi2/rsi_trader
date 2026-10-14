@@ -1,9 +1,9 @@
 name: SOXL Strategy B 15m Monitor
 
 on:
-  # 월요일부터 금요일까지 15분마다 자동 실행 (미국 주식 시장 감시)
+  # 15분마다 자동 실행 (미국 주식 시장 감시)
   schedule:
-    - cron: '*/15 * * * 1-5'
+    - cron: '*/15 * * * *'
   # GitHub 웹 화면에서 수동으로 'Run workflow' 버튼을 눌러 즉시 테스트 가능
   workflow_dispatch:
 
@@ -33,4 +33,4 @@ jobs:
           TOSS_CLIENT_ID: ${{ secrets.TOSS_CLIENT_ID }}
           TOSS_CLIENT_SECRET: ${{ secrets.TOSS_CLIENT_SECRET }}
         run: |
-          PYTHONPATH=. python -c "from rsi_trader.monitor_soxl import SoxlStrategyBMonitor; m = SoxlStrategyBMonitor(); m.check_once()"
+          PYTHONPATH=. python -c "from rsi_trader.monitor_soxl import SoxlStrategyBMonitor; m = SoxlStrategyBMonitor(); m.check_once(send_heartbeat=True)"

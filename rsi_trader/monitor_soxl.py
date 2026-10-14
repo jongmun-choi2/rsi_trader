@@ -87,7 +87,7 @@ class SoxlStrategyBMonitor:
         if self.kakao_notifier.access_token:
             self.kakao_notifier.send_message(msg)
 
-    def check_once(self) -> None:
+    def check_once(self, send_heartbeat: bool = False) -> None:
         try:
             df = fetch_soxl_candles()
             if df.empty:
@@ -199,6 +199,20 @@ class SoxlStrategyBMonitor:
                         f"• 가이드: $100선 추가 급락 위험이 있습니다. 비중 축소 또는 손절을 검토하세요."
                     )
                     self.send_alert(msg)
+
+            # 정기 생존 신고 (Heartbeat) 요청 시
+            elif send_heartbeat:
+                loss_pct = (cur_close - self.user_avg) / self.user_avg * 100
+                heartbeat_msg = (
+                    f"🤖 <b>[SOXL 15분봉 모니터링 체크 완료]</b>\n\n"
+                    f"• 캔들시각: <b>{candle_time.strftime('%m-%d %H:%M')} (KST)</b>\n"
+                    f"• 현재가: <b>${cur_close:.2f}</b> (손실률: {loss_pct:.1f}%)\n"
+                    f"• RSI 지표: <b>{cur_rsi:.1f}</b>\n"
+                    f"• 감시 상태: <b>정상 대기 중 (특이 신호 없음)</b>\n"
+                    f"• 내 평단가: ${self.user_avg:.2f}\n\n"
+                    f"<i>지지선($115~$125) 매수 신호나 목표가($135, $145) 도달 시 즉시 알림이 발송됩니다.</i>"
+                )
+                self.send_alert(heartbeat_msg)
 
         except Exception as e:
             logger.error(f"모니터링 수행 중 에러: {e}")
