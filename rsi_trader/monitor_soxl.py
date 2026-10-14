@@ -105,9 +105,30 @@ class SoxlStrategyBMonitor:
             if self.toss_client:
                 try:
                     price_info = self.toss_client.get_current_price("SOXL")
-                    if price_info and "price" in price_info:
-                        toss_price = float(price_info["price"])
-                        logger.info(f"[토스증권 실시간 시세] ${toss_price:.2f} (야후: ${cur_close:.2f})")
+                    logger.info(f"[토스 API 응답 데이터]: {price_info}")
+                    toss_price = None
+                    if isinstance(price_info, dict):
+                        if "price" in price_info:
+                            toss_price = float(price_info["price"])
+                        elif "currentPrice" in price_info:
+                            toss_price = float(price_info["currentPrice"])
+                        elif "prices" in price_info and isinstance(price_info["prices"], list):
+                            for p in price_info["prices"]:
+                                if isinstance(p, dict) and ("price" in p or "currentPrice" in p):
+                                    toss_price = float(p.get("price") or p.get("currentPrice"))
+                                    break
+                        else:
+                            for k, v in price_info.items():
+                                if isinstance(v, dict) and ("price" in v or "currentPrice" in v):
+                                    toss_price = float(v.get("price") or v.get("currentPrice"))
+                                    break
+                    elif isinstance(price_info, list) and price_info:
+                        first = price_info[0]
+                        if isinstance(first, dict):
+                            toss_price = float(first.get("price") or first.get("currentPrice") or 0)
+
+                    if toss_price and toss_price > 0:
+                        logger.info(f"✨ [토스증권 앱장 실시간 체결가 반영]: ${toss_price:.2f} (야후: ${cur_close:.2f})")
                         cur_close = toss_price
                 except Exception as te:
                     logger.warning(f"토스 시세 조회 실패(야후 시세로 폴백): {te}")
