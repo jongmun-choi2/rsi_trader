@@ -42,7 +42,14 @@ def fetch_soxl_candles() -> pd.DataFrame:
     resp = httpx.get(url, headers=headers, timeout=10.0)
     resp.raise_for_status()
     data = resp.json()["chart"]["result"][0]
-    timestamps = [datetime.fromtimestamp(ts) for ts in data["timestamp"]]
+    
+    # 한국 표준시 (KST = UTC+9)로 명시적 변환
+    from datetime import timezone, timedelta
+    kst = timezone(timedelta(hours=9))
+    timestamps = [
+        datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(kst).replace(tzinfo=None)
+        for ts in data["timestamp"]
+    ]
     quote = data["indicators"]["quote"][0]
     df = pd.DataFrame({
         "timestamp": timestamps,
@@ -88,7 +95,7 @@ class SoxlStrategyBMonitor:
             cur_rsi = arrays.rsi[t]
 
             logger.info(
-                f"[SOXL 모니터링] 캔들시각: {candle_time.strftime('%m-%d %H:%M')} | "
+                f"[SOXL 모니터링] 캔들시각: {candle_time.strftime('%m-%d %H:%M')} (KST) | "
                 f"현재가: ${cur_close:.2f} | RSI: {cur_rsi:.1f} | 평단가: ${self.user_avg:.2f}"
             )
 
