@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RSI Modular Trader Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="p-6">
+  <!-- 상단 독립 검색 및 종목 헤더 섹션 (디자인 가이드라인 준수: 독립 섹션 중심) -->
+  <header class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+        RSI
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 tracking-tight">TRADING DASHBOARD</h1>
+        <p class="text-xs text-slate-500 font-medium">Modular Stack & Indicator Gauges (시안 3)</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <div class="relative w-64">
+        <input type="text" id="symbolInput" value="005930" placeholder="종목코드 검색 (예: 005930)" 
+               class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mono">
+        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+      </div>
+      <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> 페이퍼 가상 매매 가동중
+      </span>
+    </div>
+  </header>
+
+  <!-- 그리드 레이아웃: 차트 위젯 & RSI 게이지 위젯 -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <!-- 1. 메인 주식 차트 위젯 (2열 차지) -->
+    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
+      <div class="flex justify-between items-center mb-3">
+        <div>
+          <span class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Stock Chart</span>
+          <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <span id="chartSymbol">005930 (삼성전자)</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">15분봉</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700 font-medium">볼린저 밴드(20, 2σ)</span>
+          </h2>
+        </div>
+        <div class="flex gap-1.5 text-xs font-semibold mono">
+          <button class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700">15m</button>
+          <button class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700">1h</button>
+          <button class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700">1D</button>
+        </div>
+      </div>
+      <div id="chartContainer" class="w-full h-80 rounded-lg overflow-hidden border border-slate-100"></div>
+    </div>
+
+    <!-- 2. RSI 다이얼 게이지 위젯 (1열 차지) -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+      <div>
+        <span class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Indicator Gauges</span>
+        <h2 class="text-lg font-bold text-slate-900 mb-4">RSI (14) Relative Strength</h2>
+        
+        <div class="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+          <div class="relative flex items-center justify-center mb-2">
+            <!-- 시각적 다이얼 게이지 SVG -->
+            <svg class="w-44 h-24 overflow-visible" viewBox="0 0 100 50">
+              <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e2e8f0" stroke-width="10" stroke-linecap="round"/>
+              <path id="gaugePath" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#2563eb" stroke-width="10" 
+                    stroke-dasharray="125.6" stroke-dashoffset="62.8" stroke-linecap="round" class="transition-all duration-700"/>
+            </svg>
+            <div class="absolute bottom-0 text-center">
+              <span id="rsiValueText" class="text-3xl font-extrabold text-slate-900 mono">--</span>
+              <p class="text-[10px] font-semibold text-slate-400 uppercase">Current RSI</p>
+            </div>
+          </div>
+
+          <div class="w-full flex justify-between text-xs font-semibold px-4 mt-2">
+            <span class="text-emerald-600">30 과매도</span>
+            <span class="text-slate-400">50 중립</span>
+            <span class="text-rose-600">70 과매수</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+        <p class="text-xs font-medium text-blue-900 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span> 전략 상태: 
+          <span id="strategyStatusText" class="font-bold">과매도 진입 모니터링 중</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 섹션: 수익률 메트릭 카드 & 페이퍼 트레이딩 주문 장부 -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- 수익률 통계 카드 위젯 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <span class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Performance</span>
+      <h2 class="text-lg font-bold text-slate-900 mb-4">Profit & Loss Metrics</h2>
+      <div class="space-y-3">
+        <div class="p-3 bg-slate-50 rounded-lg flex justify-between items-center">
+          <span class="text-xs font-medium text-slate-600">총 평가 자산</span>
+          <span id="metricTotalValue" class="text-base font-bold text-slate-900 mono">₩ 10,000,000</span>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-lg flex justify-between items-center">
+          <span class="text-xs font-medium text-slate-600">당일 손익 (Daily PnL)</span>
+          <span id="metricDailyPnl" class="text-base font-bold text-emerald-600 mono">+₩ 145,000 (+1.45%)</span>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-lg flex justify-between items-center">
+          <span class="text-xs font-medium text-slate-600">일일 서킷브레이커 (3%)</span>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">정상 (정지 없음)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 페이퍼 트레이딩 체결 내역 (2열 차지) -->
+    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
+      <span class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Ledger</span>
+      <h2 class="text-lg font-bold text-slate-900 mb-3">Paper Trading Order History</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
+              <th class="py-2.5 px-3">시간</th>
+              <th class="py-2.5 px-3">종목</th>
+              <th class="py-2.5 px-3">셋업</th>
+              <th class="py-2.5 px-3">수량</th>
+              <th class="py-2.5 px-3">진입가</th>
+              <th class="py-2.5 px-3">청산가</th>
+              <th class="py-2.5 px-3">손익</th>
+              <th class="py-2.5 px-3">사유</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody" class="divide-y divide-slate-100 mono">
+            <!-- API 데이터로 렌더링 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 차트 초기화
+    const chartElem = document.getElementById('chartContainer');
+    const chart = LightweightCharts.createChart(chartElem, {
+      layout: { background: { color: '#ffffff' }, textColor: '#475569' },
+      grid: { vertLines: { color: '#f1f5f9' }, horzLines: { color: '#f1f5f9' } },
+      timeScale: { borderColor: '#e2e8f0', timeVisible: true, secondsVisible: false },
+      rightPriceScale: { borderColor: '#e2e8f0' }
+    });
+
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: '#ef4444', downColor: '#2563eb',
+      borderUpColor: '#ef4444', borderDownColor: '#2563eb',
+      wickUpColor: '#ef4444', wickDownColor: '#2563eb'
+    });
+
+    const bbUpperSeries = chart.addLineSeries({ color: '#8b5cf6', lineWidth: 1 });
+    const bbLowerSeries = chart.addLineSeries({ color: '#8b5cf6', lineWidth: 1 });
+    const bbMidSeries = chart.addLineSeries({ color: '#cbd5e1', lineWidth: 1, lineStyle: 2 });
+
+    // 데이터 로딩
+    async function loadData() {
+      try {
+        const res = await fetch('/api/chart-data');
+        const data = await res.json();
+        
+        candleSeries.setData(data.candles);
+        bbUpperSeries.setData(data.bb_upper);
+        bbLowerSeries.setData(data.bb_lower);
+        bbMidSeries.setData(data.bb_mid);
+        chart.timeScale().fitContent();
+
+        // RSI 게이지 업데이트
+        const rsi = data.latest_rsi;
+        document.getElementById('rsiValueText').innerText = rsi.toFixed(1);
+        const gaugePath = document.getElementById('gaugePath');
+        const totalLen = 125.6;
+        const offset = totalLen - (rsi / 100) * totalLen;
+        gaugePath.style.strokeDashoffset = offset;
+        gaugePath.style.stroke = rsi <= 30 ? '#10b981' : (rsi >= 70 ? '#ef4444' : '#2563eb');
+
+        // 메트릭 로딩
+        const mRes = await fetch('/api/metrics');
+        const mData = await mRes.json();
+        document.getElementById('metricTotalValue').innerText = '₩ ' + Math.round(mData.total_value).toLocaleString();
+        document.getElementById('metricDailyPnl').innerText = '+₩ ' + Math.round(mData.daily_pnl).toLocaleString() + ' (+' + mData.daily_pnl_pct + '%)';
+
+        // 주문 로딩
+        const oRes = await fetch('/api/orders');
+        const oData = await oRes.json();
+        const tbody = document.getElementById('ordersTableBody');
+        tbody.innerHTML = '';
+        if (oData.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-slate-400">최근 체결된 내역이 없습니다.</td></tr>';
+        } else {
+          oData.forEach(o => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="py-2 px-3">${o.time}</td>
+              <td class="py-2 px-3 font-bold">${o.symbol}</td>
+              <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100">${o.setup}</span></td>
+              <td class="py-2 px-3">${o.shares}주</td>
+              <td class="py-2 px-3">₩${Math.round(o.entry_price).toLocaleString()}</td>
+              <td class="py-2 px-3">₩${Math.round(o.exit_price).toLocaleString()}</td>
+              <td class="py-2 px-3 font-semibold ${o.pnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
+                ${o.pnl >= 0 ? '+' : ''}₩${Math.round(o.pnl).toLocaleString()}
+              </td>
+              <td class="py-2 px-3 text-slate-500">${o.exit_reason}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      } catch (err) {
+        console.error('Data loading error:', err);
+      }
+    }
+
+    loadData();
+    window.addEventListener('resize', () => chart.resize(chartElem.clientWidth, chartElem.clientHeight));
+  </script>
+</body>
+</html>

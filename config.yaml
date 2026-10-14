@@ -1,0 +1,50 @@
+# RSI Trader 기본 설정 파일
+market: "KR"             # 거래 시장 (KR: 국내 주식, US: 미국 주식)
+timeframe_minutes: 15    # 캔들 리샘플링 타임프레임 (기본 15분봉)
+symbols:
+  - "005930"             # 삼성전자
+  - "000660"             # SK하이닉스
+mode: "backtest"         # 실행 모드 (backtest 또는 paper, 실거래 차단)
+
+# 지표 설정
+indicators:
+  rsi_period: 14
+  bb_period: 20
+  bb_std: 2.0
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  volume_ma_period: 10
+
+# 전략 설정 (영상 복합 전략)
+strategy:
+  oversold: 30.0                  # RSI 과매도 기준
+  overbought: 70.0                # RSI 과매수 기준
+  volume_surge_ratio: 1.5         # 볼린저 이탈 시 거래량 급증 배율 (150%)
+  require_volume_surge: false     # 거래량 급증 필수 조건 여부
+  engulf_max_wait: 5              # 과매도/BB이탈 후 장악형 양봉 대기 최대 봉 수
+  pivot_left: 3                   # 스윙 피벗 좌측 봉 수
+  pivot_right: 3                  # 스윙 피벗 우측 봉 수
+  pivot_min_gap: 5                # 다이버전스/쌍바닥 피벗 간 최소 봉 간격
+  pivot_max_gap: 40               # 다이버전스/쌍바닥 피벗 간 최대 봉 간격
+  divergence_rsi_ceiling: 40.0    # 강세 다이버전스 기준 첫 RSI 상한
+  macd_max_wait: 10               # 다이버전스 발생 후 MACD 크로스 대기 최대 봉 수
+  double_bottom_tolerance: 0.015  # 쌍바닥 허용 오차 (1.5%)
+  double_bottom_max_wait: 10      # 쌍바닥 형성 후 넥라인 돌파 대기 최대 봉 수
+  stop_buffer_pct: 0.002          # 손절가 안전 버퍼 (0.2%)
+  reward_risk: 2.0                # 목표 손익비 (1:2)
+  use_signal_exit: true           # 지표 기반 청산(과매수 장악형/약세 다이버전스) 사용
+
+# 자금 및 리스크 관리 설정
+risk:
+  initial_equity: 10000000        # 시작 자본금 (1,000만원)
+  risk_per_trade: 0.01            # 1회 거래 최대 손실 위험률 (1%)
+  max_position_pct: 0.3           # 단일 종목 최대 투자 비중 (30%)
+  daily_max_loss_pct: 0.03        # 일일 최대 허용 손실률 (3%, 도달 시 당일 매매 중단)
+  max_positions: 3                # 최대 동시 보유 종목 수
+
+# 비용 설정 (국내 주식 기준)
+costs:
+  commission_rate: 0.00015        # 매매 수수료 (0.015%)
+  sell_tax_rate: 0.0020           # 매도 증권거래세 (0.20%)
+  slippage_pct: 0.0005            # 슬리피지 추정치 (0.05%)
