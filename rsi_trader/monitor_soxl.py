@@ -37,7 +37,7 @@ def load_env_file(path: str = ".env") -> None:
 
 
 def fetch_soxl_candles() -> pd.DataFrame:
-    url = "https://query1.finance.yahoo.com/v8/finance/chart/SOXL?range=5d&interval=15m"
+    url = "https://query1.finance.yahoo.com/v8/finance/chart/SOXL?range=5d&interval=15m&includePrePost=true"
     headers = {"User-Agent": "Mozilla/5.0"}
     resp = httpx.get(url, headers=headers, timeout=10.0)
     resp.raise_for_status()
